@@ -1,0 +1,1030 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Teen Patti — Demo</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400;600&family=IM+Fell+English&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --felt: #1a4a2e;
+        --felt-light: #225a38;
+        --gold: #c9a84c;
+        --gold-light: #e8c96a;
+        --cream: #f5ead8;
+        --red: #c0392b;
+        --dark: #0d1f16;
+        --shadow: rgba(0, 0, 0, 0.6);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Cinzel", serif;
+        background: var(--dark);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background:
+          radial-gradient(
+            ellipse at 50% 0%,
+            rgba(201, 168, 76, 0.12) 0%,
+            transparent 60%
+          ),
+          radial-gradient(
+            ellipse at 0% 100%,
+            rgba(26, 74, 46, 0.4) 0%,
+            transparent 50%
+          );
+        pointer-events: none;
+      }
+
+      h1 {
+        font-family: "Cinzel Decorative", serif;
+        color: var(--gold);
+        font-size: clamp(1.4rem, 4vw, 2.4rem);
+        letter-spacing: 0.12em;
+        text-shadow: 0 0 30px rgba(201, 168, 76, 0.4);
+        margin-bottom: 6px;
+        text-align: center;
+      }
+
+      .subtitle {
+        font-family: "IM Fell English", serif;
+        color: rgba(245, 234, 216, 0.5);
+        font-size: 0.85rem;
+        letter-spacing: 0.2em;
+        margin-bottom: 28px;
+        text-align: center;
+      }
+
+      /* DEAL BUTTON */
+      #dealBtn {
+        background: linear-gradient(135deg, #b8860b, #e8c96a, #b8860b);
+        color: #1a0a00;
+        border: none;
+        padding: 14px 48px;
+        font-family: "Cinzel Decorative", serif;
+        font-size: 1rem;
+        letter-spacing: 0.15em;
+        border-radius: 4px;
+        cursor: pointer;
+        box-shadow:
+          0 4px 20px rgba(201, 168, 76, 0.5),
+          inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s;
+        margin-bottom: 32px;
+        position: relative;
+      }
+      #dealBtn:hover {
+        transform: translateY(-2px);
+        box-shadow:
+          0 8px 32px rgba(201, 168, 76, 0.7),
+          inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      }
+      #dealBtn:active {
+        transform: translateY(0);
+      }
+      #dealBtn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      /* TABLE */
+      .table {
+        background: radial-gradient(
+          ellipse at 50% 40%,
+          var(--felt-light),
+          var(--felt) 70%
+        );
+        border-radius: 160px;
+        border: 8px solid #3d2b00;
+        box-shadow:
+          0 0 0 3px var(--gold),
+          0 20px 60px rgba(0, 0, 0, 0.8),
+          inset 0 2px 20px rgba(0, 0, 0, 0.4);
+        padding: 40px 30px;
+        width: min(780px, 98vw);
+        position: relative;
+        margin-bottom: 30px;
+      }
+
+      .pot-display {
+        text-align: center;
+        margin-bottom: 24px;
+        font-size: 0.8rem;
+        color: var(--gold-light);
+        letter-spacing: 0.15em;
+      }
+      .pot-display span {
+        font-size: 1.3rem;
+      }
+
+      /* PLAYERS GRID */
+      .players-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+
+      .player-slot {
+        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(201, 168, 76, 0.25);
+        border-radius: 12px;
+        padding: 14px;
+        transition:
+          border-color 0.4s,
+          box-shadow 0.4s;
+        position: relative;
+      }
+      .player-slot.round-winner {
+        border-color: rgba(201, 168, 76, 0.7);
+        box-shadow: 0 0 16px rgba(201, 168, 76, 0.3);
+      }
+      .player-slot.winner {
+        border-color: var(--gold);
+        box-shadow: 0 0 24px rgba(201, 168, 76, 0.5);
+      }
+      .player-slot.loser {
+        opacity: 0.55;
+      }
+
+      .player-name {
+        font-size: 0.75rem;
+        letter-spacing: 0.2em;
+        color: var(--gold);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .player-name .crown {
+        display: none;
+      }
+      .player-slot.winner .player-name .crown {
+        display: inline;
+      }
+
+      .cards-row {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 10px;
+        min-height: 72px;
+        align-items: center;
+      }
+
+      /* PLAYING CARD */
+      .card {
+        width: 44px;
+        height: 68px;
+        border-radius: 5px;
+        background: var(--cream);
+        border: 1px solid #ccc;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        font-family: "IM Fell English", serif;
+        box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.5);
+        position: relative;
+        animation: flipIn 0.4s ease backwards;
+        line-height: 1;
+        padding-top: 2px;
+      }
+      .card.red {
+        color: var(--red);
+      }
+      .card.black {
+        color: #111;
+      }
+      .card.back {
+        background: linear-gradient(135deg, #1a3a80, #0d1f50);
+        border: 2px solid rgba(255, 255, 255, 0.15);
+        color: transparent;
+      }
+      .card.back::after {
+        content: "♦";
+        color: rgba(255, 255, 255, 0.2);
+        font-size: 2rem;
+        position: absolute;
+      }
+
+      .card .val {
+        font-size: 1.1rem;
+        font-weight: bold;
+      }
+      .card .suit {
+        font-size: 0.85rem;
+        margin-top: -2px;
+      }
+
+      @keyframes flipIn {
+        from {
+          transform: rotateY(90deg) scale(0.8);
+          opacity: 0;
+        }
+        to {
+          transform: rotateY(0) scale(1);
+          opacity: 1;
+        }
+      }
+
+      .score-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.68rem;
+        color: rgba(245, 234, 216, 0.6);
+        letter-spacing: 0.1em;
+      }
+      .score-row .vis-score {
+        color: var(--gold-light);
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+
+      /* ROUNDS */
+      .rounds-section {
+        width: min(780px, 98vw);
+        margin-bottom: 24px;
+      }
+      .rounds-title {
+        font-family: "Cinzel Decorative", serif;
+        color: var(--gold);
+        font-size: 0.85rem;
+        letter-spacing: 0.2em;
+        margin-bottom: 12px;
+        text-align: center;
+      }
+      .rounds-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+        justify-content: center;
+      }
+      .round-tab {
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(201, 168, 76, 0.2);
+        color: rgba(245, 234, 216, 0.5);
+        padding: 6px 18px;
+        border-radius: 30px;
+        font-family: "Cinzel", serif;
+        font-size: 0.72rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        letter-spacing: 0.1em;
+      }
+      .round-tab.active {
+        background: rgba(201, 168, 76, 0.15);
+        border-color: var(--gold);
+        color: var(--gold);
+      }
+
+      /* CARD VALUE LEGEND */
+      .legend-box {
+        background: rgba(0, 0, 0, 0.45);
+        border: 1px solid rgba(201, 168, 76, 0.2);
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin-bottom: 20px;
+        width: min(780px, 98vw);
+      }
+      .legend-title {
+        font-size: 0.68rem;
+        letter-spacing: 0.2em;
+        color: var(--gold);
+        margin-bottom: 10px;
+        text-align: center;
+      }
+      .legend-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 6px;
+      }
+      .legend-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 5px;
+        padding: 4px 8px;
+        font-size: 0.68rem;
+        font-family: "IM Fell English", serif;
+        color: var(--cream);
+      }
+      .legend-item .lrank {
+        color: var(--gold-light);
+        font-weight: bold;
+        font-size: 0.8rem;
+      }
+      .legend-hand {
+        margin-top: 10px;
+        border-top: 1px solid rgba(201, 168, 76, 0.12);
+        padding-top: 10px;
+      }
+      .legend-hand-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 5px;
+      }
+      .legend-hand-item {
+        display: flex;
+        justify-content: space-between;
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 5px;
+        padding: 4px 8px;
+        font-size: 0.66rem;
+        font-family: "IM Fell English", serif;
+        color: rgba(245, 234, 216, 0.75);
+      }
+      .legend-hand-item .hrank {
+        color: var(--gold);
+        font-weight: bold;
+      }
+
+      /* ROUND SCOREBOARD */
+      .round-board {
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(201, 168, 76, 0.15);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .round-board table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.72rem;
+      }
+      .round-board th {
+        background: rgba(201, 168, 76, 0.1);
+        color: var(--gold);
+        padding: 8px 12px;
+        letter-spacing: 0.12em;
+        text-align: left;
+        font-weight: 600;
+      }
+      .round-board td {
+        padding: 8px 12px;
+        color: var(--cream);
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        font-family: "IM Fell English", serif;
+        font-size: 0.8rem;
+      }
+      .round-board tr.round-winner-row td {
+        background: rgba(201, 168, 76, 0.12);
+        color: var(--gold-light);
+        font-weight: bold;
+      }
+      .round-board tr.round-winner-row td:first-child::before {
+        content: "🏅 ";
+      }
+      .round-board tr:hover td {
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      /* FINAL RESULT */
+      .final-section {
+        width: min(780px, 98vw);
+        margin-bottom: 30px;
+        display: none;
+      }
+      .final-section.show {
+        display: block;
+      }
+      .final-title {
+        font-family: "Cinzel Decorative", serif;
+        color: var(--gold);
+        font-size: 1.1rem;
+        letter-spacing: 0.2em;
+        text-align: center;
+        margin-bottom: 16px;
+      }
+      .winner-banner {
+        background: linear-gradient(
+          135deg,
+          rgba(201, 168, 76, 0.15),
+          rgba(201, 168, 76, 0.05)
+        );
+        border: 1px solid var(--gold);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        margin-bottom: 16px;
+        box-shadow: 0 0 30px rgba(201, 168, 76, 0.2);
+      }
+      .winner-banner .trophy {
+        font-size: 2.5rem;
+        display: block;
+        margin-bottom: 6px;
+      }
+      .winner-banner .winner-name {
+        font-family: "Cinzel Decorative", serif;
+        color: var(--gold-light);
+        font-size: 1.4rem;
+        letter-spacing: 0.15em;
+      }
+      .winner-banner .win-amount {
+        font-family: "IM Fell English", serif;
+        color: rgba(245, 234, 216, 0.7);
+        margin-top: 4px;
+        font-size: 0.9rem;
+      }
+
+      .final-table {
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(201, 168, 76, 0.15);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .final-table table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.75rem;
+      }
+      .final-table th {
+        background: rgba(201, 168, 76, 0.1);
+        color: var(--gold);
+        padding: 9px 14px;
+        letter-spacing: 0.1em;
+        text-align: left;
+      }
+      .final-table td {
+        padding: 8px 14px;
+        color: var(--cream);
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        font-family: "IM Fell English", serif;
+        font-size: 0.82rem;
+      }
+      .final-table tr.top td {
+        color: var(--gold-light);
+        font-weight: bold;
+      }
+
+      .hand-type {
+        font-size: 0.62rem;
+        color: rgba(201, 168, 76, 0.7);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-top: 1px;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          box-shadow: 0 0 24px rgba(201, 168, 76, 0.5);
+        }
+        50% {
+          box-shadow: 0 0 40px rgba(201, 168, 76, 0.9);
+        }
+      }
+      .player-slot.winner {
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      .info-bar {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+      .info-chip {
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(201, 168, 76, 0.2);
+        border-radius: 20px;
+        padding: 5px 16px;
+        font-size: 0.68rem;
+        color: rgba(245, 234, 216, 0.6);
+        letter-spacing: 0.12em;
+      }
+      .info-chip b {
+        color: var(--gold);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🃏 Teen Patti</h1>
+    <p class="subtitle">THREE-CARD POKER · DEMO TABLE</p>
+
+    <div class="info-bar">
+      <div class="info-chip">BET <b>৳100</b> each</div>
+      <div class="info-chip">POT <b>৳400</b></div>
+      <div class="info-chip">ROOM FEE <b>25%</b></div>
+      <div class="info-chip">WIN <b>৳300</b></div>
+    </div>
+
+    <button id="dealBtn">🔄 DEAL NEW GAME</button>
+
+    <div class="table">
+      <div class="pot-display">POT — <span>৳400</span></div>
+      <div class="players-grid" id="playersGrid">
+        <!-- players injected here -->
+      </div>
+    </div>
+
+    <div class="legend-box" id="legendBox" style="display: none">
+      <div class="legend-title">📘 CARD VALUE REFERENCE</div>
+      <div class="legend-grid">
+        <div class="legend-item">
+          <span>2 – 9</span><span class="lrank">Face Value</span>
+        </div>
+        <div class="legend-item">
+          <span>10</span><span class="lrank">10</span>
+        </div>
+        <div class="legend-item">
+          <span>Jack (J)</span><span class="lrank">11</span>
+        </div>
+        <div class="legend-item">
+          <span>Queen (Q)</span><span class="lrank">12</span>
+        </div>
+        <div class="legend-item">
+          <span>King (K)</span><span class="lrank">13</span>
+        </div>
+        <div class="legend-item">
+          <span>Ace (A)</span><span class="lrank">14</span>
+        </div>
+      </div>
+      <div class="legend-hand">
+        <div class="legend-title" style="margin-bottom: 8px">
+          HAND RANKINGS (highest → lowest)
+        </div>
+        <div class="legend-hand-grid">
+          <div class="legend-hand-item">
+            <span>Trail (3-of-a-kind)</span><span class="hrank">6</span>
+          </div>
+          <div class="legend-hand-item">
+            <span>Straight Flush</span><span class="hrank">5</span>
+          </div>
+          <div class="legend-hand-item">
+            <span>Straight (Sequence)</span><span class="hrank">4</span>
+          </div>
+          <div class="legend-hand-item">
+            <span>Flush (same suit)</span><span class="hrank">3</span>
+          </div>
+          <div class="legend-hand-item">
+            <span>Pair</span><span class="hrank">2</span>
+          </div>
+          <div class="legend-hand-item">
+            <span>High Card</span><span class="hrank">1</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rounds-section" id="roundsSection" style="display: none">
+      <p class="rounds-title">ROUND SCORES</p>
+      <div class="rounds-tabs" id="roundsTabs"></div>
+      <div class="round-board" id="roundBoard"></div>
+    </div>
+
+    <div class="final-section" id="finalSection">
+      <p class="final-title">⚜ FINAL RESULT ⚜</p>
+      <div class="winner-banner" id="winnerBanner"></div>
+      <div class="final-table" id="finalTable"></div>
+    </div>
+
+    <script>
+      const SUITS = ["S", "H", "D", "C"];
+      const VALUES = [
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "J",
+        "Q",
+        "K",
+        "A",
+      ];
+      const VALUE_MAP = {
+        2: 2,
+        3: 3,
+        4: 4,
+        5: 5,
+        6: 6,
+        7: 7,
+        8: 8,
+        9: 9,
+        10: 10,
+        J: 11,
+        Q: 12,
+        K: 13,
+        A: 14,
+      };
+      const SUIT_SYMBOLS = {
+        S: "\u2660",
+        H: "\u2665",
+        D: "\u2666",
+        C: "\u2663",
+      };
+      const HAND_NAMES = {
+        6: "Trail \uD83D\uDD25",
+        5: "Str.Flush",
+        4: "Straight",
+        3: "Flush",
+        2: "Pair",
+        1: "High Card",
+      };
+      const PLAYER_LABELS = ["Player 1", "Player 2", "Player 3", "Player 4"];
+      const PLAYER_KEYS = ["P1", "P2", "P3", "P4"];
+
+      let gameData = null;
+      let activeRound = 0;
+      let finalWinnerKeys = null;
+
+      /* ---- DECK ---- */
+      function createDeck() {
+        const d = [];
+        for (let s of SUITS) for (let v of VALUES) d.push(`${v}-${s}`);
+        return d;
+      }
+      function shuffle(deck) {
+        for (let pass = 0; pass < 3; pass++)
+          for (let i = deck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [deck[i], deck[j]] = [deck[j], deck[i]];
+          }
+        return deck;
+      }
+      function parseCard(card) {
+        const idx = card.lastIndexOf("-");
+        return {
+          value: card.substring(0, idx),
+          suit: card.substring(idx + 1),
+          rank: VALUE_MAP[card.substring(0, idx)],
+        };
+      }
+
+      /* ---- SCORING ---- */
+      function calcScores(cards) {
+        const parsed = cards.map(parseCard).sort((a, b) => b.rank - a.rank);
+        const ranks = parsed.map((c) => c.rank);
+        const suits = parsed.map((c) => c.suit);
+
+        const isTrail = ranks[0] === ranks[1] && ranks[1] === ranks[2];
+        const isFlush = suits[0] === suits[1] && suits[1] === suits[2];
+        const isNormalSeq =
+          !isTrail && ranks[0] === ranks[1] + 1 && ranks[1] === ranks[2] + 1;
+        const isA23 = ranks[0] === 14 && ranks[1] === 3 && ranks[2] === 2;
+        const isSeq = isNormalSeq || isA23;
+        const seqTop = isA23 ? 15 : ranks[0];
+
+        let pairRank = 0,
+          kickerRank = 0;
+        if (!isTrail) {
+          if (ranks[0] === ranks[1]) {
+            pairRank = ranks[0];
+            kickerRank = ranks[2];
+          } else if (ranks[1] === ranks[2]) {
+            pairRank = ranks[1];
+            kickerRank = ranks[0];
+          }
+        }
+        const isPair = pairRank > 0;
+
+        let typeCode = 1,
+          internalScore = 0;
+        if (isTrail) {
+          typeCode = 6;
+          internalScore = 600000 + ranks[0] * 1000;
+        } else if (isSeq && isFlush) {
+          typeCode = 5;
+          internalScore = 500000 + seqTop * 1000;
+        } else if (isSeq) {
+          typeCode = 4;
+          internalScore = 400000 + seqTop * 1000;
+        } else if (isFlush) {
+          typeCode = 3;
+          internalScore = 300000 + ranks[0] * 10000 + ranks[1] * 100 + ranks[2];
+        } else if (isPair) {
+          typeCode = 2;
+          internalScore = 200000 + pairRank * 1000 + kickerRank;
+        } else {
+          typeCode = 1;
+          internalScore = 100000 + ranks[0] * 10000 + ranks[1] * 100 + ranks[2];
+        }
+
+        const rl = (r) =>
+          ({ 11: "J", 12: "Q", 13: "K", 14: "A" })[r] || String(r);
+        const topCards = isA23
+          ? "A-2-3"
+          : `${rl(ranks[0])}-${rl(ranks[1])}-${rl(ranks[2])}`;
+        // visible score: hand-type digit + top two card labels (readable 3-token string)
+        const visibleScore = `${typeCode} · ${rl(ranks[0])}${rl(ranks[1])}`;
+
+        return { internalScore, visibleScore, topCards, typeCode };
+      }
+
+      /* ---- ROUND ---- */
+      function playRound() {
+        const deck = shuffle(createDeck());
+        const hands = { P1: [], P2: [], P3: [], P4: [] };
+        for (let c = 0; c < 3; c++)
+          for (let pk of PLAYER_KEYS) hands[pk].push(deck.pop());
+        const result = {};
+        for (let pk of PLAYER_KEYS)
+          result[pk] = { cards: hands[pk], ...calcScores(hands[pk]) };
+        return result;
+      }
+
+      /* ---- WINNER LOGIC (per-round points) ---- */
+      function getRoundWinners(rd) {
+        const best = Math.max(...PLAYER_KEYS.map((pk) => rd[pk].internalScore));
+        return PLAYER_KEYS.filter((pk) => rd[pk].internalScore === best);
+      }
+      function computeFinalWinners() {
+        const pts = { P1: 0, P2: 0, P3: 0, P4: 0 },
+          totInt = { P1: 0, P2: 0, P3: 0, P4: 0 };
+        gameData.forEach((rd) => {
+          getRoundWinners(rd).forEach((pk) => pts[pk]++);
+          PLAYER_KEYS.forEach((pk) => (totInt[pk] += rd[pk].internalScore));
+        });
+        const maxPts = Math.max(...Object.values(pts));
+        let cands = PLAYER_KEYS.filter((pk) => pts[pk] === maxPts);
+        if (cands.length > 1) {
+          const best = Math.max(...cands.map((pk) => totInt[pk]));
+          cands = cands.filter((pk) => totInt[pk] === best);
+        }
+        return { winners: cands, points: pts, totInt };
+      }
+
+      /* ---- RENDER HELPERS ---- */
+      function suitColor(s) {
+        return s === "H" || s === "D" ? "red" : "black";
+      }
+
+      function cardHTML(card, delayS = 0, glow = false) {
+        const { value, suit } = parseCard(card);
+        const g = glow
+          ? "outline:2px solid var(--gold);outline-offset:2px;box-shadow:0 0 12px 2px rgba(201,168,76,0.7);"
+          : "";
+        return `<div class="card ${suitColor(suit)}" style="animation-delay:${delayS}s;${g}">
+    <span class="val">${value}</span><span class="suit">${SUIT_SYMBOLS[suit]}</span>
+  </div>`;
+      }
+
+      /* ---- RENDER: PLAYER CARD SLOTS ----
+   roundIdx     = which round's cards to display
+   finalWinKeys = null during play; array of winners after game ends
+   Per-round winner gets: gold card glow + "ROUND WIN" badge + round-winner slot style
+   Game winner gets: final winner slot style + crown
+*/
+      function renderRoundCards(roundIdx, finalWinKeys) {
+        const rd = gameData[roundIdx];
+        const roundWinKeys = getRoundWinners(rd);
+        const grid = document.getElementById("playersGrid");
+        grid.innerHTML = "";
+
+        // cumulative points up to this round
+        const pts = { P1: 0, P2: 0, P3: 0, P4: 0 };
+        gameData
+          .slice(0, roundIdx + 1)
+          .forEach((r) => getRoundWinners(r).forEach((pk) => pts[pk]++));
+
+        PLAYER_KEYS.forEach((pk, i) => {
+          const d = rd[pk];
+          const isRoundWinner = roundWinKeys.includes(pk);
+          const isFinalWinner = finalWinKeys && finalWinKeys.includes(pk);
+          const isFinalLoser = finalWinKeys && !finalWinKeys.includes(pk);
+
+          let cls = "player-slot";
+          if (isFinalWinner) cls += " winner";
+          else if (isFinalLoser) cls += " loser";
+          else if (isRoundWinner) cls += " round-winner";
+
+          const slot = document.createElement("div");
+          slot.className = cls;
+
+          // Cards glow gold when this player won this round
+          const cardsHTML = d.cards
+            .map((c, j) => cardHTML(c, j * 0.07 + i * 0.05, isRoundWinner))
+            .join("");
+          const pips = Array(pts[pk]).fill("\u2605").join("") || "\u00b7";
+
+          // Badge: "ROUND WIN" during live rounds; crown via CSS for final winner
+          const badge =
+            isRoundWinner && !isFinalWinner
+              ? `<span style="font-size:0.57rem;background:rgba(201,168,76,0.2);border:1px solid var(--gold);border-radius:3px;padding:1px 6px;color:var(--gold-light);letter-spacing:0.04em">ROUND WIN</span>`
+              : "";
+
+          slot.innerHTML = `
+      <div class="player-name">
+        <span class="crown">&#x1F451;</span>${PLAYER_LABELS[i]}
+        <span style="margin-left:auto;display:flex;align-items:center;gap:4px">${badge}</span>
+      </div>
+      <div class="cards-row">${cardsHTML}</div>
+      <div class="score-row">
+        <span>Hand: <b class="vis-score" style="font-size:0.75rem">${HAND_NAMES[d.typeCode]}</b></span>
+        <span style="font-size:0.68rem;color:var(--gold-light)">${d.topCards}</span>
+      </div>
+      <div class="score-row" style="margin-top:3px">
+        <span style="font-size:0.62rem;color:rgba(201,168,76,0.5)">Points: <b style="color:var(--gold)">${pips}</b></span>
+      </div>`;
+          grid.appendChild(slot);
+        });
+      }
+
+      function renderCurrentRound() {
+        renderRoundCards(gameData.length - 1, null);
+      }
+
+      /* ---- RENDER: ROUND SCORE TABLE ----
+   Fixed row order: P1 → P4 (never reordered by score)
+   Columns: Player | Cards | Hand | Score (visible) | Internal | Pts
+   Round winner row: highlighted gold
+*/
+      function renderRoundBoard(roundIdx) {
+        const board = document.getElementById("roundBoard");
+        const rd = gameData[roundIdx];
+        const roundWinners = getRoundWinners(rd);
+
+        const pts = { P1: 0, P2: 0, P3: 0, P4: 0 };
+        gameData
+          .slice(0, roundIdx + 1)
+          .forEach((r) => getRoundWinners(r).forEach((pk) => pts[pk]++));
+
+        let rows = "";
+        PLAYER_KEYS.forEach((pk, i) => {
+          const d = rd[pk];
+          const isRW = roundWinners.includes(pk);
+          const cards = d.cards
+            .map((c) => {
+              const { value, suit } = parseCard(c);
+              return `${value}${SUIT_SYMBOLS[suit]}`;
+            })
+            .join(" ");
+
+          rows += `<tr class="${isRW ? "round-winner-row" : ""}">
+      <td>${PLAYER_LABELS[i]}</td>
+      <td style="font-family:monospace;white-space:nowrap;letter-spacing:0.04em">${cards}</td>
+      <td>${HAND_NAMES[d.typeCode]}</td>
+      <td style="text-align:center;letter-spacing:0.05em;color:var(--gold-light)">${d.visibleScore}</td>
+      <td style="text-align:center;color:rgba(245,234,216,0.4);font-size:0.7rem">${d.internalScore.toLocaleString()}</td>
+      <td style="text-align:center;color:var(--gold)">${pts[pk]}</td>
+    </tr>`;
+        });
+
+        board.innerHTML = `<table>
+    <thead><tr>
+      <th>Player</th>
+      <th>Cards</th>
+      <th>Hand</th>
+      <th style="text-align:center" title="Visible score: HandType \u00b7 TopCards">Score</th>
+      <th style="text-align:center;opacity:0.55" title="Internal score \u2014 determines winner">Internal</th>
+      <th style="text-align:center" title="Round wins">Pts</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+      }
+
+      /* ---- RENDER: TABS ---- */
+      function renderRoundTabs(finalWinKeys) {
+        const tabs = document.getElementById("roundsTabs");
+        tabs.innerHTML = "";
+        gameData.forEach((_, i) => {
+          const btn = document.createElement("button");
+          btn.className = `round-tab${i === activeRound ? " active" : ""}`;
+          btn.textContent = `Round ${i + 1}`;
+          btn.onclick = () => {
+            activeRound = i;
+            renderRoundTabs(finalWinKeys);
+            renderRoundBoard(i);
+            renderRoundCards(i, finalWinKeys);
+          };
+          tabs.appendChild(btn);
+        });
+      }
+
+      /* ---- RENDER: FINAL ---- */
+      function renderFinal() {
+        const { winners, points, totInt } = computeFinalWinners();
+        finalWinnerKeys = winners;
+        const WIN = 300,
+          perWinner = (WIN / winners.length).toFixed(0);
+
+        renderRoundCards(2, winners);
+
+        const banner = document.getElementById("winnerBanner");
+        if (winners.length === 1) {
+          const idx = PLAYER_KEYS.indexOf(winners[0]);
+          banner.innerHTML = `<span class="trophy">&#x1F3C6;</span>
+      <div class="winner-name">${PLAYER_LABELS[idx]} WINS!</div>
+      <div class="win-amount">${points[winners[0]]} round win${points[winners[0]] > 1 ? "s" : ""} \u00b7 Takes home \u09F3${perWinner}</div>`;
+        } else {
+          const names = winners
+            .map((k) => PLAYER_LABELS[PLAYER_KEYS.indexOf(k)])
+            .join(" & ");
+          banner.innerHTML = `<span class="trophy">&#x1F91D;</span>
+      <div class="winner-name">TIE \u2014 ${names}</div>
+      <div class="win-amount">Each gets \u09F3${perWinner}</div>`;
+        }
+
+        const standing = PLAYER_KEYS.map((pk) => ({
+          pk,
+          pts: points[pk],
+          int: totInt[pk],
+        })).sort((a, b) => (b.pts !== a.pts ? b.pts - a.pts : b.int - a.int));
+
+        let rows = "";
+        standing.forEach(({ pk, pts, int }, rank) => {
+          const idx = PLAYER_KEYS.indexOf(pk);
+          const isW = winners.includes(pk);
+          const medal = ["&#x1F947;", "&#x1F948;", "&#x1F949;", ""][rank] || "";
+          rows += `<tr class="${isW ? "top" : ""}">
+      <td>${medal} ${PLAYER_LABELS[idx]}</td>
+      <td style="text-align:center">${pts} / 3</td>
+      <td style="text-align:center">${int.toLocaleString()}</td>
+      <td>${isW ? `<b style="color:var(--gold-light)">\u09F3${perWinner}</b>` : "&mdash;"}</td>
+    </tr>`;
+        });
+        document.getElementById("finalTable").innerHTML = `<table>
+    <thead><tr><th>Player</th><th>Round Wins</th><th>Total Internal</th><th>Payout</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+
+        document.getElementById("finalSection").classList.add("show");
+        activeRound = 2;
+        renderRoundTabs(winners);
+        renderRoundBoard(2);
+      }
+
+      /* ---- DEAL FLOW ---- */
+      function delay(ms) {
+        return new Promise((r) => setTimeout(r, ms));
+      }
+
+      async function dealGame() {
+        const btn = document.getElementById("dealBtn");
+        btn.disabled = true;
+        document.getElementById("finalSection").classList.remove("show");
+        document.getElementById("roundsSection").style.display = "none";
+        document.getElementById("legendBox").style.display = "none";
+        gameData = [];
+        finalWinnerKeys = null;
+
+        document.getElementById("playersGrid").innerHTML = PLAYER_KEYS.map(
+          (_, i) => `
+      <div class="player-slot">
+        <div class="player-name"><span class="crown">&#x1F451;</span>${PLAYER_LABELS[i]}</div>
+        <div class="cards-row">
+          <div class="card back"></div><div class="card back"></div><div class="card back"></div>
+        </div>
+        <div class="score-row"><span style="color:rgba(245,234,216,0.3)">Waiting...</span></div>
+      </div>`,
+        ).join("");
+
+        for (let i = 0; i < 3; i++) {
+          await delay(i === 0 ? 400 : 900);
+          gameData.push(playRound());
+          activeRound = i;
+          renderCurrentRound();
+          document.getElementById("roundsSection").style.display = "block";
+          document.getElementById("legendBox").style.display = "block";
+          renderRoundTabs(null);
+          renderRoundBoard(i);
+        }
+
+        await delay(700);
+        renderFinal();
+        btn.disabled = false;
+        btn.textContent = "&#x1F504; DEAL NEW GAME";
+      }
+
+      document.getElementById("dealBtn").addEventListener("click", dealGame);
+
+      // Init
+      document.getElementById("playersGrid").innerHTML = PLAYER_LABELS.map(
+        (label) => `
+    <div class="player-slot">
+      <div class="player-name"><span class="crown">&#x1F451;</span>${label}</div>
+      <div class="cards-row">
+        <div class="card back"></div><div class="card back"></div><div class="card back"></div>
+      </div>
+      <div class="score-row"><span style="color:rgba(245,234,216,0.3)">Press Deal to start</span></div>
+    </div>`,
+      ).join("");
+    </script>
+  </body>
+</html>
